@@ -19,7 +19,6 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.16.0"
 
-
   name = local.name
   cidr = local.vpc_cidr
   azs  = local.azs
@@ -51,16 +50,11 @@ module "eks" {
   cluster_endpoint_public_access            = true
   enable_cluster_creator_admin_permissions  = true
 
-  cluster_addons = {
-    coredns = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    vpc-cni = {
-      most_recent = true
-    }
+   cluster_addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {}
+    kube-proxy             = {}
+    vpc-cni                = {}
   }
 
   vpc_id                   = module.vpc.vpc_id
@@ -70,6 +64,7 @@ module "eks" {
   eks_managed_node_group_defaults = {
     ami_type                              = "AL2_x86_64"
     attach_cluster_primary_security_group = true
+    #create_security_group                 = false
   }
 
   eks_managed_node_groups = {
@@ -88,3 +83,52 @@ module "eks" {
     }
   }
 } 
+
+/*
+resource "helm_release" "elasticsearch" {
+  name       = "elasticsearch"
+  namespace  = "my-elasticsearch" # Specify the namespace
+  repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "elasticsearch"
+  version    = "21.4.0"
+
+  create_namespace = true # Creates the namespace if it does not exist
+
+  values = [
+    <<EOF
+    replicaCount: 3
+    minimumMasterNodes: 2
+    clusterName: "elasticsearch-cluster"
+    esConfig:
+      elasticsearch.yml: |
+        xpack.security.enabled: true
+    volumeClaimTemplate:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "gp2"
+      resources:
+        requests:
+          storage: 5Gi
+    EOF
+  ]
+}
+*/
+
+resource "helm_release" "nginx" {
+  name       = "nginx"
+  namespace  = "default"
+  repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "nginx"
+  depends_on = [module.eks.eks_managed_node_groups.kubernetes-cluster-wg-1]
+  #timeout    = 1000
+
+  values = [
+    # Override default NGINX values if necessary
+    <<EOF
+    replicaCount: 2
+    image:
+      tag: "latest"
+    service:
+      type: LoadBalancer
+    EOF
+  ]
+}

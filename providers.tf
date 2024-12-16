@@ -42,7 +42,6 @@ data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_name
 }
 
-/*
 provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
@@ -58,7 +57,6 @@ provider "helm" {
     }
   }
 }
-*/
 
 provider "kubectl" {
   apply_retry_count      = 5

@@ -7,3 +7,6 @@
 
 # Ignore Terraform plan files
 *.tfplan
+
+terraform.tfstate.backup
+terraform.tfstate
