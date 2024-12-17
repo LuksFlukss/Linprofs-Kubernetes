@@ -55,6 +55,10 @@ module "eks" {
     eks-pod-identity-agent = {}
     kube-proxy             = {}
     vpc-cni                = {}
+    aws-ebs-csi-driver = {
+      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+      most_recent = true
+    }
   }
 
   vpc_id                   = module.vpc.vpc_id
@@ -63,8 +67,7 @@ module "eks" {
 
   eks_managed_node_group_defaults = {
     ami_type                              = "AL2_x86_64"
-    attach_cluster_primary_security_group = true
-    #create_security_group                 = false
+    # attach_cluster_primary_security_group = true #Double secruity groups with same tag issue
   }
 
   eks_managed_node_groups = {
@@ -73,52 +76,74 @@ module "eks" {
 
       name = "node-group-1"
 
-      min_size     = 1
-      max_size     = 2
-      desired_size = 1
+      min_size     = 2
+      max_size     = 6
+      desired_size = 4
 
-      instance_types = ["t3.small"]
+      instance_types = ["t3.medium"]
       capacity_type  = "SPOT"
 
     }
   }
-} 
+}
 
-/*
+module "ebs_csi_irsa_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+
+  role_name             = "${var.cluster_name}-ebs-csi"
+  attach_ebs_csi_policy = true
+
+  oidc_providers = {
+    ex = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+    }
+  }
+}
+
+resource "terraform_data" "set_default_storageclass" {
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Patching gp2 StorageClass to set it as default..."
+      kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+    EOT
+  }
+
+  depends_on = [module.eks]
+}
+
 resource "helm_release" "elasticsearch" {
   name       = "elasticsearch"
-  namespace  = "my-elasticsearch" # Specify the namespace
+  namespace  = "my-elasticsearch"
   repository = "oci://registry-1.docker.io/bitnamicharts"
   chart      = "elasticsearch"
-  version    = "21.4.0"
+  version    = "21.3.23"
 
-  create_namespace = true # Creates the namespace if it does not exist
+  create_namespace = true
 
-  values = [
-    <<EOF
-    replicaCount: 3
-    minimumMasterNodes: 2
-    clusterName: "elasticsearch-cluster"
-    esConfig:
-      elasticsearch.yml: |
-        xpack.security.enabled: true
-    volumeClaimTemplate:
-      accessModes: ["ReadWriteOnce"]
-      storageClassName: "gp2"
-      resources:
-        requests:
-          storage: 5Gi
-    EOF
-  ]
+  set {
+    name  = "service.type"
+    value = "LoadBalancer"
+  }
+
+  set {
+    name  = "service.port"
+    value = "9200"
+  }
+
+  set {
+    name  = "data.persistence.storageClass"
+    value = "gp2"
+  }
 }
-*/
 
+/*
 resource "helm_release" "nginx" {
   name       = "nginx"
   namespace  = "default"
   repository = "oci://registry-1.docker.io/bitnamicharts"
   chart      = "nginx"
-  depends_on = [module.eks.eks_managed_node_groups.kubernetes-cluster-wg-1]
+  # depends_on = [module.eks.eks_managed_node_groups]
   #timeout    = 1000
 
   values = [
@@ -132,3 +157,4 @@ resource "helm_release" "nginx" {
     EOF
   ]
 }
+*/
