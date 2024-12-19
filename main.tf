@@ -14,35 +14,6 @@ locals {
   }
 }
 
-/*
-module "vpc" {
-
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.16.0"
-
-  name = local.name
-  cidr = local.vpc_cidr
-  azs  = local.azs
-
-  private_subnets     = local.private_subnets
-  public_subnets      = local.public_subnets
-  intra_subnets       = local.intra_subnets
-
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-  single_nat_gateway   = true
-  enable_nat_gateway   = true
-
-  public_subnet_tags = {
-    "kubernetes.io/role/elb" = 1
-  }
-
-  private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = 1
-  }
-}
-*/
-
 module "vpc" {
   source = "./modules/vpc"
 
@@ -127,41 +98,35 @@ module "ebs_csi_irsa_role" {
 module "elasticsearch" {
   source = "./modules/elasticsearch"
 
-  release_name = "elasticsearch"
-  namespace = "elk"
-  chart_repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart_name = "elasticsearch"
-  chart_version = "21.3.23"
-  kibana_service_type = "LoadBalancer"
-  service_port = "9200"
-  kibana_service_port = "5061"
+  release_name              = "my-elasticsearch"
+  namespace                 = var.kubectl_namespace
+  chart_repository          = var.bitnami_chart_repository
+  chart_name                = "elasticsearch"
+  chart_version             = "21.4.0"
+  service_port              = "9200"
 
   eks_module_dependency     = module.eks
 
-  storage_class             = "gp2"
+  default_storage_class     = "gp2"
   masterOnly                = "false"
   replicacount_data         = "0"
   replicacount_coordinating = "0"
+
   kibanaEnabled             = "true"
+  kibana_service_type       = "LoadBalancer"
+  kibana_service_port       = "5061"
 }
 
-/*
-module "kibana" {
-  source              = "./modules/kibana"
-  release_name        = "kibana"
-  namespace           = "elk"
-  chart_repository    = "oci://registry-1.docker.io/bitnamicharts"
-  chart_name          = "kibana"
-  chart_version       = "11.4.1"
-  service_type        = "LoadBalancer"
-  service_port        = 5601
-  elasticsearch_host  = "elasticsearch"
-  elasticsearch_port  = 9200
-  kibana_username     = "elastic"
-  kibana_password     = "linprofs"
-  enable_ingress      = true
-  ingress_host        = "kibana.linprofs.com"
-  storage_class       = "gp2"
-  es_module_dependency = module.elasticsearch
+module "logstash" {
+  source = "./modules/logstash"
+
+  es_module_dependency      = module.elasticsearch
+  release_name              = "my-logstash"
+  namespace                 = var.kubectl_namespace
+  chart_repository          = var.bitnami_chart_repository
+  chart_name                = "logstash"
+  chart_version             = "6.4.1"
+
+  elasticsearch_host        = module.elasticsearch.es_release_name
+  elasticsearch_port        = module.elasticsearch.es_service_port
 }
-*/

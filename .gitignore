@@ -8,5 +8,8 @@
 # Ignore Terraform plan files
 *.tfplan
 
+.terraform.lock.hcl
+
 terraform.tfstate.backup
 terraform.tfstate
+

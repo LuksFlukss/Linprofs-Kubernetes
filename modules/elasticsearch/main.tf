@@ -1,29 +1,17 @@
-
-resource "terraform_data" "set_default_storageclass" {
-  provisioner "local-exec" {
-    command = <<EOT
-      echo "Patching gp2 StorageClass to set it as default..."
-      kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-    EOT
-  }
-
-  depends_on = [var.eks_module_dependency]
-}
-
 resource "helm_release" "elasticsearch" {
 
-  name       = var.release_name
-  namespace  = var.namespace
-  repository = var.chart_repository
-  chart      = var.chart_name
-  version    = var.chart_version
+  name          = var.release_name
+  chart         = var.chart_name
 
-  depends_on = [terraform_data.set_default_storageclass]
+  namespace     = var.namespace
+  repository    = var.chart_repository
+  version       = var.chart_version
+
   create_namespace = true
 
   set {
-    name  = "global.storageClass"
-    value = var.storage_class
+    name  = "global.defaultStorageClass"
+    value = var.default_storage_class
   }
 
   set {

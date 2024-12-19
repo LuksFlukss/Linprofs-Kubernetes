@@ -45,8 +45,8 @@ variable "service_port" {
   default     = 9200
 }
 
-variable "storage_class" {
-  description = "Kubernetes storage class to use for persistence"
+variable "default_storage_class" {
+  description = "Kubernetes default storage class to use for persistence"
   type        = string
   default     = "gp2"
 }

@@ -19,13 +19,15 @@ variable "vpc_name" {
   default     = "my-vpc"
 }
 
-/* Elastic Search Data*/
-output "elasticsearch_url" {
-  description = "The Elasticsearch URL exposed by the module"
-  value       = module.elasticsearch.elasticsearch_url
+/* AWS ELK Module*/
+variable "kubectl_namespace" {
+  description = "Namespace of ou kubectl"
+  type        = string
+  default     = "elk"
 }
 
-output "elasticsearch_service_name" {
-  description = "The name of the Elasticsearch service"
-  value       = module.elasticsearch.elasticsearch_service_name
+variable "bitnami_chart_repository" {
+  description = "Bitanmi Helm chart repository"
+  type        = string
+  default     = "oci://registry-1.docker.io/bitnamicharts"
 }
