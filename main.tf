@@ -70,9 +70,15 @@ module "eks" {
     coredns                = {
       most_recent = true
     }
-    eks-pod-identity-agent = {}
-    kube-proxy             = {}
-    vpc-cni                = {}
+    eks-pod-identity-agent = {
+      most_recent = true
+    }
+    kube-proxy             = {
+      most_recent = true
+    }
+    vpc-cni                = {
+      most_recent = true
+    }
     aws-ebs-csi-driver = {
       service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
       most_recent = true
@@ -121,63 +127,41 @@ module "ebs_csi_irsa_role" {
 module "elasticsearch" {
   source = "./modules/elasticsearch"
 
-  eks_module_dependency = module.eks
+  release_name = "elasticsearch"
+  namespace = "elk"
+  chart_repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart_name = "elasticsearch"
+  chart_version = "21.3.23"
+  kibana_service_type = "LoadBalancer"
+  service_port = "9200"
+  kibana_service_port = "5061"
+
+  eks_module_dependency     = module.eks
+
+  storage_class             = "gp2"
+  masterOnly                = "false"
+  replicacount_data         = "0"
+  replicacount_coordinating = "0"
+  kibanaEnabled             = "true"
 }
 
 /*
 module "kibana" {
-  source              = "./modules/elk/kibana"
+  source              = "./modules/kibana"
   release_name        = "kibana"
-  namespace           = "my-kibana"
+  namespace           = "elk"
   chart_repository    = "oci://registry-1.docker.io/bitnamicharts"
   chart_name          = "kibana"
-  chart_version       = ""
+  chart_version       = "11.4.1"
   service_type        = "LoadBalancer"
   service_port        = 5601
-  elasticsearch_host  = "elasticsearch-service"
+  elasticsearch_host  = "elasticsearch"
   elasticsearch_port  = 9200
   kibana_username     = "elastic"
   kibana_password     = "linprofs"
   enable_ingress      = true
   ingress_host        = "kibana.linprofs.com"
   storage_class       = "gp2"
-}
-*/
-
-/*
-resource "terraform_data" "set_default_storageclass" {
-  provisioner "local-exec" {
-    command = <<EOT
-      echo "Patching gp2 StorageClass to set it as default..."
-      kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-    EOT
-  }
-
-  depends_on = [module.eks]
-}
-
-resource "helm_release" "elasticsearch" {
-  name       = "elasticsearch"
-  namespace  = "my-elasticsearch"
-  repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart      = "elasticsearch"
-  version    = "21.3.23"
-
-  create_namespace = true
-
-  set {
-    name  = "service.type"
-    value = "LoadBalancer"
-  }
-
-  set {
-    name  = "service.port"
-    value = "9200"
-  }
-
-  set {
-    name  = "data.persistence.storageClass"
-    value = "gp2"
-  }
+  es_module_dependency = module.elasticsearch
 }
 */

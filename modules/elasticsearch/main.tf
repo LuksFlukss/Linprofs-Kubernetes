@@ -22,17 +22,37 @@ resource "helm_release" "elasticsearch" {
   create_namespace = true
 
   set {
-    name  = "service.type"
-    value = var.service_type
-  }
-
-  set {
-    name  = "service.port"
-    value = var.service_port
-  }
-
-  set {
-    name  = "data.persistence.storageClass"
+    name  = "global.storageClass"
     value = var.storage_class
+  }
+
+  set {
+    name  = "master.masterOnly"
+    value = var.masterOnly
+  }
+
+  set {
+    name  = "data.replicaCount"
+    value = var.replicacount_data
+  }
+
+  set {
+    name  = "coordinating.replicaCount"
+    value = var.replicacount_coordinating
+  }
+
+  set {
+    name  = "global.kibanaEnabled"
+    value = var.kibanaEnabled
+  }
+
+  set {
+    name  = "kibana.service.type"
+    value = var.kibana_service_type
+  }
+
+  set {
+    name  = "kibana.service.port"
+    value = var.kibana_service_port
   }
 }

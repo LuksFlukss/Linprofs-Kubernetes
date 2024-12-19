@@ -20,6 +20,17 @@ output "elasticsearch_url" {
   value       = "http://${helm_release.elasticsearch.name}-svc.${var.namespace}.svc.cluster.local:${var.service_port}"
 }
 
+output "elasticsearch_host" {
+  value = "${helm_release.elasticsearch.name}.${var.namespace}.svc.cluster.local"
+  description = "The Elasticsearch hostname to use in Kibana"
+}
+
+output "elasticsearch_port" {
+  value = var.service_port
+  description = "The Elasticsearch port to use in Kibana"
+}
+
+
 /*
 # If you are using LoadBalancer, output the external IP or DNS name
 output "elasticsearch_loadbalancer_ip" {
