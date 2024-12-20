@@ -9,7 +9,7 @@ variable "region" {
 variable "cluster_name" {
   description = "Name of our AWS EKS Cluster"
   type        = string
-  default     = "Louka_Clstr"
+  default     = "eks_default"
 }
 
 /* AWS VPC Module*/

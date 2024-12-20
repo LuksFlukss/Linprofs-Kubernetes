@@ -7,6 +7,8 @@ resource "helm_release" "elasticsearch" {
   repository    = var.chart_repository
   version       = var.chart_version
 
+  depends_on = [var.eks_module_dependency]
+
   create_namespace = true
 
   set {

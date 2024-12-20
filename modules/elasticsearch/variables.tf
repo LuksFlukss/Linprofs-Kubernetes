@@ -75,7 +75,6 @@ variable "kibanaEnabled" {
   default     = "true"
 }
 
-
 variable "kibana_service_port" {
   description = "Service port for Kibana"
   type        = string

@@ -8,12 +8,10 @@ terraform {
       source = "hashicorp/kubernetes"
       version = "2.31"
     }
-    /*
     helm = {
       source = "hashicorp/helm"
       version = "2.15"
     }
-    */
     kubectl = {
       source  = "alekc/kubectl"
       version = ">= 2.0.2"
@@ -26,7 +24,7 @@ provider "aws" {
 }
 
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
+  host                   = module.eks.eks_cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   config_path    = ""
   config_context = ""
@@ -39,12 +37,12 @@ provider "kubernetes" {
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_name
+  name = module.eks.eks_cluster_name
 }
 
 provider "helm" {
   kubernetes {
-    host                   = module.eks.cluster_endpoint
+    host                   = module.eks.eks_cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 
     config_path    = ""
@@ -53,20 +51,20 @@ provider "helm" {
     exec {
       api_version = "client.authentication.k8s.io/v1"
       command     = "aws"
-      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.region]
+      args        = ["eks", "get-token", "--cluster-name", var.cluster_name, "--region", var.region]
     }
   }
 }
 
 provider "kubectl" {
   apply_retry_count      = 5
-  host                   = module.eks.cluster_endpoint
+  host                   = module.eks.eks_cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   load_config_file       = false
 
   exec {
     api_version = "client.authentication.k8s.io/v1"
     command     = "aws"
-    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.region]
+    args        = ["eks", "get-token", "--cluster-name", var.cluster_name, "--region", var.region]
   }
 }
